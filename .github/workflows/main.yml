@@ -5,6 +5,9 @@ on:
     - cron: "0 * * * *"  # every hour
   workflow_dispatch:     # allow manual run
 
+permissions:
+  contents: write
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -20,6 +23,24 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Increment run counter
+        run: |
+          if [ ! -f run_count.txt ]; then
+            echo 0 > run_count.txt
+          fi
+          count=$(cat run_count.txt)
+          count=$((count + 1))
+          echo $count > run_count.txt
+          echo "Run number: $count"
+
+      - name: Commit updated counter
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add run_count.txt
+          git commit -m "Update run count" || echo "No changes to commit"
+          git push
 
       - name: Run checker
         run: python checker.py
